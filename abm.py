@@ -6,13 +6,32 @@ import numpy as np
 import pylab as pl
 from random import choice,randrange, shuffle
 import time
+from datetime import datetime
+import json
+import boto
+
+global bucketName
+bucketName = "property_game"
+
+
+
+
+def S3connectBucket(bucketName):
+    s3 = boto.connect_s3()
+    bucket = s3.get_bucket(bucketName)
+    return bucket
+
+global bucket 
+bucket = S3connectBucket("property_game")
 
 class property_game():
+
 
     def __init__(self):
         self.iconn = None
         self.sconn = None
     
+ 
     
     def initialize_grid(self,STRATEGY_SET,size=100,perc_filled_sites=1):
         '''initialize grid with an equi-probable set of each strategy specified in STRATEGY_SET, 
@@ -183,10 +202,7 @@ class property_game():
   
     def Fermi_update(self,pay_off,strategies,K=0.1):
         '''update strategies by player 1 trying to reproduce the strategy of player 2 with Fermi Temperature'''
-        
-        #{'best_site': 53.0, 'o_site': 52, 'all': {42.0: 2.0, 51.0: 1.0, 53.0: 3.9000000000000004}, 'best_pay_off': 3.9000000000000004, 'o_pay_off': 2.0}
-
-        
+         
         '''Fermi Temperature'''
         W =  1/(1+np.exp((pay_off['o_pay_off']-pay_off['best_pay_off'])/K))
         rand = np.random.rand()
@@ -200,7 +216,7 @@ class property_game():
 
 
     def Dirk_update(self,pay_off,strategies,r,q):
-        
+        '''update strategies by player 1 trying to reproduce the strategy of player 2 with Dirk Temperature'''
         if r==1 and q==0:
             return strategies
         
@@ -363,93 +379,31 @@ class property_game():
         self.crop_grid(S['seq'][1],S['s2'],M)
         
         
-
-    def simulate(self,update=True,mobility=True,plot=True):
-          
-        strategies = strategies_init.copy()
+    def simulate2(self,plot=True,save=True):
         
-        coop = np.array(strategies.values())
-        empty = len(coop[coop==-1])
-        
-        cooperation = []
-        
-        for i in range(MCS):
-            '''pick an agent randomly'''
-            site = choice(strategies.keys())
-            
-            print '\n',i,site
-            
-            if strategies[site]==-1:
-                '''if randomly chosen site is empty, continue'''
-                try:
-                    cooperation.append(cooperation[-1])
-                except:
-                    cooperation.append(0)
-                continue
-            
-            
-            '''compare pay-off with neighbors to decide action'''
-            comparison = self.play_with_random_neighbor(site,strategies)
-                     
-            if comparison.has_key('player_1'):
-                if update:
-                    print "update : %s"%site
-                    strategies = self.Fermi_update(comparison['player_1'], comparison['player_2'], comparison['pay_offs'], strategies)
-                
-                if s_MoveEmpty > 0:
-                    print "move to Best Empty Site : %s"%site
-                    strategies = self.moveToBestEmptySite(site,strategies,plot=False)
-            
-                if s_MoveExpell > 0:
-                    print "move to Expell : %s"%site
-                    strategies = self.moveExpell(site,strategies,plot=False)
-                    
-                    coop = np.array(strategies.values())
-                    check_empty = len(coop[coop==-1])
-                    
-                    if not empty == check_empty:
-                        print empty,check_empty
-                        time.sleep(2)
-                    
-            
-            coop = np.array(strategies.values())
-            cooperation.append(np.sum(coop[coop>0])/float(len(coop)))
-            
-            print "cooperation level : %.2f percent"%cooperation[-1]
-        
-            
-        
-            if sum(coop[coop>-1])==0:
-                print "no cooperator left"
-                break
-        
-        print "empty_sites : %s" %len(coop[coop==-1])
-        print "defectors : %s" %len(coop[coop==0])
-        print "cooperators : %s"%len(coop[coop==1])
-        
-        
-        if plot:
-            pl.figure(1)
-            pl.plot(cooperation,'-')
-            pl.xlabel("Monte Carlo Steps (MCS)")
-            pl.ylabel("proportion of cooperators")
-            pl.savefig("cooperation.png")
-            pl.close()
-        
-        return strategies,cooperation,strategies_init
-
-
-    def simulate2(self,plot=True):
-        
-        self.initVariables()
+        init_timestamp = datetime.now() 
+        init_T = time.mktime(init_timestamp.timetuple())
+       
+        #self.initVariables()
         
         strategies = strategies_init.copy()
         
+        strategi = {}
         coop = np.array(strategies.values())
         empty = len(coop[coop==-1])
         
         C={'x':[],'y':[]}
 
+        
+        dic = {'init_timestamp' : init_T, 
+               'input': {
+                'grid_size' : grid_size,
+                'iterations' : iterations,
+                'filled_sites' : perc_filled_sites,
+                'strategies_init' : strategies_init,
+                'r':r,'q':q,'m':m,'s':s,'M':M,
+                        }
+               }
         
         cooperation = []
         
@@ -459,29 +413,23 @@ class property_game():
         
         
         for i in range(MCS):
+            
+            if i==range(MCS)[-iterations]:
+                strategies_step_before = strategies.copy()
+            
             '''pick an agent randomly'''
             site = choice(strategies.keys())
             
             if strategies[site]==-1:
                 '''if randomly chosen site is empty, continue'''
                 #print "empty site %s (%s)"%(site,strategies[site])
+                
                 try:
                     cooperation.append(cooperation[-1])
                     continue
                 except:
                     cooperation.append(0)
                     continue
-                
-            
-            #print i,site,strategies[site]
-               
-            '''compare pay-off with neighbors to decide action'''
-            comparison = self.play_with_all_neighbors(site,strategies)
-            #print comparison
- 
-            if not comparison.has_key('best_site'):
-                continue
-
 
             '''Migration'''
             if np.random.rand() < m:
@@ -496,9 +444,14 @@ class property_game():
                 strategies = self.move(chgDic,strategies)['strategies']
                 site = chgDic['best_site']
                 comparison = self.play_with_all_neighbors(site,strategies)                
-                                
-            '''Probability to update strategy'''
             
+            else:
+                '''no movement, compare pay-off with neighbors'''
+                comparison = self.play_with_all_neighbors(site,strategies)
+                if not comparison.has_key('best_site'):
+                    continue
+
+            '''Update strategy given comparison with neighbors'''            
             strategies = self.Dirk_update(comparison,strategies,r,q)
         
             '''                
@@ -513,32 +466,7 @@ class property_game():
             comparison = self.play_with_all_neighbors(site,strategies)
             '''
             
-            '''noise1'''
-            #self.Dirk_update(comparison,strategies,1,q)  
-            '''Migration to any (empty/full) site'''
-#             elif migration and n > s:
-#                 chgDic = self.explore_neighborhood(site,strategies,site_occupation="all",forceMove=False,plot=False)
-#                 #print chgDic
-#                 if np.random.rand() < s:
-#                     strategies = self.move(chgDic,strategies)['strategies']
-#                     site = chgDic['best_site']
-            
-            
-            ''' Fermi Update '''
-            #if comparison['o_pay_off'] < comparison['best_pay_off']:
-            #    self.Fermi_update(comparison,strategies,K=r)
-            
-            ''' Dirk Update '''
-            
-            '''
-            if imitation:
-                #try:
-                self.Dirk_update(comparison,strategies,r,q)
-                #except:
-                #    print comparison  
-                #    break
-            '''
-            
+               
             coop = np.array(strategies.values())
             cooperation.append(float(np.sum(coop[coop>0]))/len(coop[coop>=0]))
             
@@ -555,10 +483,15 @@ class property_game():
                 print "no defector left"
                 break
             
-            if i%100==0:
+            if i%(iterations-1)==0 and np.max(cooperation) < 0.01:
+                print "lower threshold reached"
+                break
+            
+            if i%iterations==0:
                 C['x'].append(i)
                 C['y'].append(cooperation[-1])
-                print "%s (%.2f),%s,cooperation level : %.2f percent"%(i,float(i)/MCS*100,site,cooperation[-1]*100)
+                print "%s (%.2f perc.),%s,cooperation level : %.2f percent"%(i,float(i)/MCS*100,site,cooperation[-1]*100)
+                #strategi[i]= strategies
                 cooperation=[]
 
             
@@ -570,22 +503,49 @@ class property_game():
         print "cooperators : %s"%len(coop[coop==1])
         
         
+        
+        
+        
+        self.crop_grid(0,strategies_init,10)
+        print "\n"
+        self.crop_grid(0,strategies,10)
+        
+        now = datetime.now()
+        last_T = time.mktime(now.timetuple())
+        
+        
+        dic['last_timestamp'] = last_T
+        dic['duration'] = last_T - init_T
+        dic['output'] = {'filled_sites' : len(coop[coop!=-1]),
+                         'iterations' : i,
+                         'defectors' : len(coop[coop==0]),
+                         'cooperators' : len(coop[coop==1]),   
+                         'strategies_final' : strategies,
+                         'strategies_step_before': strategies_step_before,
+                         'cooperation' : C
+                            }
+        '''
         if plot:
             pl.figure(1)
             pl.plot(C['x'],C['y'],'-')
             pl.xlabel("Monte Carlo Steps (MCS)")
             pl.ylabel("proportion of cooperators")
             pl.ylim(0,1)
-            pl.savefig("cooperation.png")
+            pl.savefig("results/figures/simul%s_grid%s_%s_r%s_q%s_m%s_s%s_M%s.png"%(iterations,grid_size,datetime.strftime(init_timestamp,'%Y%m%d%H%M%S'),r,q,m,s,M))
             pl.close()
-  
- 
-        self.crop_grid(0,strategies_init,10)
-        print "\n"
-        self.crop_grid(0,strategies,10)
         
+        if save:
+            J = json.dumps(dic)
+            f = open("results/json/simul%s_grid%s_%s_r%s_q%s_m%s_s%s_M%s.json"%(iterations,grid_size,datetime.strftime(init_timestamp,'%Y%m%d%H%M%S'),r,q,m,s,M),'wb')
+            f.write(J)
+            f.close()
+         '''
+        J = json.dumps(dic)
+        key = bucket.new_key("results/json/simul%s_grid%s_%s_r%s_q%s_m%s_s%s_M%s.json"%(iterations,grid_size,datetime.strftime(init_timestamp,'%Y%m%d%H%M%S'),r,q,m,s,M))
+        key.set_contents_from_string(J)
         
-        return strategies,C,strategies_init
+            
+        return dic
  
  
 #     
@@ -624,55 +584,63 @@ class property_game():
 
     def initVariables(self):
         
+        
+        global STRATEGY_SET
+        global grid_size
+        global iterations
+        global MCS
+        global perc_filled_sites
+        global r
+        global q
+        global m
+        global s 
+        global M 
+        global strategies_init     
+        global grid
+        
+        
+        STRATEGY_SET = {'C':1,'D':0}
+        grid_size = 49
+        iterations = 200
+        MCS = (grid_size**2)*iterations # Monte Carlo Steps
+        
+        '''Grid Sparsity'''
+        perc_filled_sites = 0.5
+        
+        '''probability not to copy best strategy'''
+        r = 0.05
+        
+        '''probability to cooperate spontaneously (noise 1)'''
+        q = 0.05
+        
+        '''Probability to Migrate'''
+        m = 1
+        
+        '''probability of expelling'''
+        s = 1
+        
+        '''Moore's Distance'''
+        M = 5
+        
+        strategies_init = self.initialize_grid(STRATEGY_SET,size = grid_size, perc_filled_sites = perc_filled_sites)
+        
+        grid = PG.make_grid(strategies_init)
 
 
-    
-       global STRATEGY_SET
-       STRATEGY_SET = {'C':1,'D':0}
-    
-       global grid_size
-       grid_size = 24
-       
-       iterations = 50
-       global MCS
-       MCS = (grid_size**2)*iterations # Monte Carlo Steps
-    
 
-       '''Grid Sparsity'''
-       global perc_filled_sites
-       perc_filled_sites = 0.5
-       
-       '''probability not to copy best strategy'''
-       global r 
-       r = 0.05
-       
-       '''probability to cooperate spontaneously (noise 1)'''
-       global q
-       q = 0.05
+    def testExpell(self):
+        self.initVariables()
+        global s
+        for s in [0.5]:
+            k=0
+            while k<3:
+                print "configuration: M=%s, r=%s, q=%s, m=%s, s=%s"%(M,r,q,m,s)
+                strategies_init = self.initialize_grid(STRATEGY_SET,size = grid_size, perc_filled_sites = perc_filled_sites)
+                strategies,C,strategies_init =  self.simulate2()
+                k+=1
+        
 
-       '''Probability to Migrate'''
-       global m
-       m = 1
-       
-       '''probability of expelling'''
-       global s 
-       s = 0.15
-       
-       '''Moore's Distance'''
-       global M 
-       M = 5
-    
-       #global s_MoveEmpty
-       #s_MoveEmpty = 0.
-    
-       #global s_MoveExpell
-       #s_MoveExpell = 0.
-    
-       global strategies_init
-       strategies_init = PG.initialize_grid(STRATEGY_SET,size = grid_size, perc_filled_sites = perc_filled_sites)
-       
-       global grid
-       grid = PG.make_grid(strategies_init)
+
 
 
 if __name__ == '__main__':
