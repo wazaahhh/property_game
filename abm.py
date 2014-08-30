@@ -68,6 +68,37 @@ class property_game():
             strategies[ix]=-1
             
         return strategies
+    
+    
+    def strKeysToInt(self,strategies):
+        
+        new_strategies = {}
+        
+        for key in strategies.keys():
+            new_strategies[int(key)] = strategies[key]
+    
+        return new_strategies
+    
+    def makeInitConditions(self,initDic):
+        strategies = self.initialize_grid(initDic['grid_size'], initDic['perc_filled_sites'])
+        key = bucket.new_key("initial_conditions/initGrid/initGrid_simul%s_grid%s_filled%s.json"%(initDic['iterations'],initDic['grid_size'],initDic['perc_filled_sites']))
+        key.set_contents_from_string(json.dumps(strategies))
+        
+        randInt = list(np.random.randint(0,max(strategies.keys())+1,iterations*grid_size**2))
+        key = bucket.new_key("initial_conditions/initRandInt/initRandInt_simul%s_grid%s_filled%s.json"%(initDic['iterations'],initDic['grid_size'],initDic['perc_filled_sites']))
+        key.set_contents_from_string(json.dumps(randInt))
+        
+        return {'strategies' : strategies, 'randInt' : randInt}
+    
+    
+    def loadInitConditions(self,initDic):
+        key = bucket.get_key("initial_conditions/initGrid/initGrid_simul%s_grid%s_filled%s.json"%(initDic['iterations'],initDic['grid_size'],initDic['perc_filled_sites']))
+        strategies_init = json.loads(key.get_contents_as_string())
+        key = bucket.get_key("initial_conditions/initRandInt/initRandInt_simul%s_grid%s_filled%s.json"%(initDic['iterations'],initDic['grid_size'],initDic['perc_filled_sites']))
+        randInt = np.array(json.loads(key.get_contents_as_string()))
+        
+        return {'strategies' : strategies_init,'randInt': randInt}
+        
         
     def make_grid(self,strategies):
         '''Turns a strategy dictionary into a command line viewable grid'''
@@ -387,9 +418,9 @@ class property_game():
         self.crop_grid(S['seq'][1],S['s2'],M)
         
      
-    def oneStep(self,strategies):
+    def oneStep(self,strategies,site):
         '''pick an agent randomly'''
-        site = choice(strategies.keys())
+        #site = choice(strategies.keys())
         
         if strategies[site]==-1:
             '''if randomly chosen site is empty, continue'''
@@ -434,34 +465,50 @@ class property_game():
         return strategies,moves
         
         
-    def simulate(self,initDic,uploadToS3=True,verbose=0):
+    
+
+    
+    def simulate(self,initDic,uploadToS3=True,verbose=0,loadStrategies=False):
         
         self.initVariables(initDic)
         
         init_timestamp = datetime.now() 
         init_T = time.mktime(init_timestamp.timetuple())
         
-        strategies_init = self.initialize_grid(grid_size,perc_filled_sites)    
+        MCS = iterations*grid_size**2
+        
+        if loadStrategies:
+            try:
+                initConditions = self.loadInitConditions(initDic)
+                strategies_init = self.strKeysToInt(initConditions['strategies'])
+                randInt = initConditions['randInt']
+                print "initial conditions successfully loaded"
+            except:
+                print 'create initial conditions'
+                initConditions = self.makeInitConditions(initDic)
+                strategies_init = initConditions['strategies']
+                randInt = initConditions['randInt']
+        else:
+            strategies_init = self.initialize_grid(grid_size,perc_filled_sites)
+            randInt = np.random.randint(np.min(strategies_init.keys()),np.max(strategies_init.keys()),MCS)
+        
         strategies = strategies_init.copy()
         
         coop = np.array(strategies.values())
         empty = len(coop[coop==-1])
-
-        
+    
         cLevel = self.coopLevel(strategies)
         
         C={'iteration':[0],'c':[cLevel['c']],'d':[cLevel['d']],'e' : [cLevel['e']]}
-    
-        MCS = iterations*grid_size**2
         
         dic = {'init_timestamp' : init_T, 'input': initDic}
         dic['input']['strategy_init'] = strategies_init
         
         strategies_iter = {}
         
-        for i in range(MCS):
+        for i,site in enumerate(randInt):
       
-            strategies,moves = self.oneStep(strategies)
+            strategies,moves = self.oneStep(strategies,site)
             
             
             try:
@@ -538,6 +585,7 @@ class property_game():
             key = bucket.new_key("results/json/simul%s_grid%s_filled%.2f_%s_r%.2f_q%.2f_m%.2f_s%.2f_M%s.json"%(iterations,grid_size,perc_filled_sites,datetime.strftime(datetime.fromtimestamp(dic['init_timestamp']),'%Y%m%d%H%M%S'),r,q,m,s,M))
             key.set_contents_from_string(J)
             print "results uploaded to S3"
+            #return dic
         else:
             return dic    
       
@@ -564,6 +612,20 @@ class property_game():
         global grid
 
 
+    def makeJsonList(self):
+        list = bucket.list("results/json/")
+        
+        output = []
+        for key in list:
+            print key.name
+            url = "https://s3.amazonaws.com/%s/%s"%(bucketName,key.name)
+            output.append(url)
+        
+        key = bucket.new_key("results/list.json")
+        key.set_contents_from_string(output)
+        
+        print output
+        
 if __name__ == '__main__':
     
 
@@ -572,12 +634,17 @@ if __name__ == '__main__':
             'r':r,'q':q,'m':m,'s':s,'M':M}'''
 
     initDic = { 'grid_size' : 49,'iterations' : 100, 'perc_filled_sites' : 0.5,
-            'r':0.05,'q':0.05,'m':1,'s':0.045,'M':5}
+            'r':0.0,'q':0.0,'m':1,'s':0.15,'M':5}
     
     
     PG = property_game()
+    #dic = PG.simulate(initDic,uploadToS3=True,verbose=2)
     
-    dic = PG.simulate(initDic,uploadToS3=True,verbose=2)
-    
+
+'''
+Todo:
+- fix initial conditions and random steps to ease comparison between scenarios
+- design a way to test whether property violation can help the outbreak of cooperation ?
+'''
 
     

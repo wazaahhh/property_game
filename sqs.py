@@ -126,9 +126,11 @@ def startECinstance(START_SCRIPT,n):
                                     user_data = START_SCRIPT)
 
 initDic = { 'grid_size' : 49,'iterations' : 200, 'perc_filled_sites' : 0.5,
-            'r':0.0,'q':0.0,'m':1,'s':0.05,'M':5}
+            'r':0.00,'q':0.00,'m':1,'s':0.0,'M':5}
 
-pDic = {'s': np.linspace(0.1,0.25,7)}
+pDic = {'s': np.linspace(0.08,0.10,3)}
+#pDic['s'] = np.array([ 0.01 ,  0.015,  0.02 ,  0.025,  0.03 ,  0.035,  0.045, 0.05, 0.055, 0.06, 0.065])
+
 
 def generateJobs(initDic,pDic,n=1):
     for k  in pDic.keys():
