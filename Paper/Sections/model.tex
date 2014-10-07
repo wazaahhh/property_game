@@ -1,0 +1,53 @@
+\section*{Model}
+{\bf [pretty much copied from Helbing 2009]} Our study is carried out for the prisoner's dilemma game (PD), which has often been used to model selfish behavior of individuals in situations where it is risky to cooperate and tempting to defect, but where the outcome of mutual defection is inferior to cooperation on both sides. Formally, the so-called ``reward" $R$ represents the payoff for mutual cooperation, while the payoff for defection of both sides is the ``punishment" $P$. $T$ represents the ``temptation" to unilaterally defect, which results in the ``sucker's payoff" $S$ for the cooperating individual. The inequalities $T > R > P > S$ and $2R > T + S$ define the classical prisoner's dilemma, in which it is more profitable to defect, no matter what strategy the other individual selects. 
+
+{\bf [pretty much copied from Helbing 2009]} Rational individuals are expected to defect when they meet once. however, defection by everyone is implied as well by the game-dynamical replicator equation {\bf [what's that?]}, which takes in to account imitation of superior strategies, or payoff-driven birth-and-death processes. 
+
+{\bf [pretty much copied from Helbing 2009]}  In contrast, a coexistence of cooperators and defectors is predicted for the snowdrift game (SD). Although it is also used to study social cooperation, its payoffs are characterized by $T > R > S > T$ {\bf [and so what ?]}.
+
+{\bf [pretty much copied from Helbing 2009]} Cooperation can be supported by repeated interactions \cite{}, by intergroup competition with or without altruistic punishment \cite{}, and by network reciprocity based on the clustering of cooperators \cite{}. In the latter case, the cooperation  in 2-dimensional spatial games is further enhanced by ``disordered environments" ($\approx 10\%$ inaccessible empty locations) \cite{}, and by diffusive mobility, provided that the mobility parameters is in a suitable range \cite{}.
+
+{\bf [pretty much copied from Helbing 2009]} However, strategy mutations, random relocations, and other sources of stochasticity (``noise") can significantly challenge the formation and survival of cooperative clusters. When no mobility or undirected, random mobility are considered , the level of cooperation in the spatial games is sensitive to noise \cite{helbing2009}, as favorable correlations between cooperative neighbors are destroyed. 
+
+{\bf [pretty much copied from Helbing 2009]} {\it success-driven} migration, in contrast, is a robust mechanism. By leaving unfavorable neighborhoods, seeking more favorable ones, and remaining in cooperative neighborhoods, it supports cooperative clusters very efficiently against the destructive effects of noise, thus preventing defector invasion in a large area of payoff parameters. {\bf Here it should reconnect wigh the property game}
+
+{\bf [pretty much copied from Helbing 2009]} We assume $N$ individuals on a square with periodic boundary conditions and $LxL$ sites, which are either empty or occupied by one individual. Individuals are updated asynchronously, in a random sequential order, and statistically, each individual gets updated $i$ times (i.e., the number of Monte Carlo steps $MCS=i*L^2$). At each step, the randomly selected individual performs simultaneous interactions with the $m=4$ direct neighbors and compares the overall payoff with that of the $m$ neighbors. The strategy of the best performing neighbor is copied with probability $1-r$ (i.e., imitation), if the own payoff was lower. With probability $r$, the strategy is randomly ``reset" ({\bf noise 1}): the individual spontaneously cooperate (with probability $q$) or to defect (with probability $1-q$). The resulting strategy mutations reflect deficient imitation or trial-and-error behavior. As a side effect, such noise leads to an independence of the final cooperation level from the initial one (at $t=0$), and a {\it qualitatively different} pattern formation dynamics for the same payoff values, update rules, and initial conditions ( c.f. SI Fig.1). Using the alternative Fermi update rule \cite{} would have been possible as well. However, resetting strategies rather than inverting them, combined with values $q$ much smaller than $0.5$, creates particularly adverse conditions for cooperation.
+
+{\bf [summarize the results of \cite{helbing2009} here]}
+
+{\bf [pretty much copied from Helbing 2009]} {\it ``success-driven migration"} has been implemented as follows \cite{}. Before the imitation step, an individual explores the expected payoffs for {\it all} sites in the Moore neighborhood $(2M + 1) x (2M + 1)$ of range $M$. If the fictitious payoff is higher than in the current location, the individual is assumed to move to the site with the highest payoff with probability $m$. If the site is already occupied by another individual, this individual will be expelled with probability $q$ to the best empty site in her own Moore neighborhood (to study the specific effects of $q$ on cooperation, with have set $m=1$).
+
+{\bf In some sense, the property game is a ``generalization" of Figure 2 E-F in \cite{helbing2009}}
+
+
+\subsection*{Initial configuration}
+
+\begin{enumerate}
+  \item  {\bf Grid and iterations:} Grid Size = 49x49, Moore's distance = 5, iterations = 200
+  \item {\bf Prisoners' dilemma:} $T>R>P>S$ and $2R > T+ S$, actually $T=1.3$, $R = 1$, $P=0.1$, $S=0$
+  \item {\bf empty sites:} variable
+\end{enumerate}
+
+
+\subsection*{execution steps}
+
+
+\begin{enumerate}
+\item Select a random agent on grid
+\item Play with 4 nearest neighbors and find best site
+\item with probability $m$, explore neighborhood within Moore's distance: with probability $1-s$ find best empty site, and with probability $s$ find best site (incl. both empty and occupied sites)
+\item if site with higher pay-off is found, move to this new site. If the site is occupied, expel agent to empty site with highest pay-off in expelled agent's Moore's distance.
+\item with probability $1-r$ copy best strategy form 4 nearest neighbors, and with probability $q$, spontaneously cooperate.
+\end{enumerate}
+
+
+We test two scenarios :
+\begin{enumerate}
+  \item no noise 1, no noise 2
+  \item noise 1, noise 2
+  \item {\bf empty sites:} variable
+  \item Is there a case where no property violation would be less beneficial  for the emergence of cooperation than a little property violation ?
+\end{enumerate}
+
+and we study the evolution of cooperation as a function of $s$, the probability to expell another agent. Because the probability to expel is conditioned by the number of filled sites around (the more sites are filled, the higher the probability to expel (to steal an occupied site).
+
