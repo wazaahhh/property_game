@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2013.3.4)  27 AUG 2014 18:02
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2013.3.4)  10 OCT 2014 19:18
 entering extended mode
  \write18 enabled.
  file:line:error style messages enabled.
@@ -161,7 +161,11 @@ Package: caption3 2012/01/12 v1.4b caption3 kernel (AR)
 )
 \c@ContinuedFloat=\count100
 )
-(./wpaper.aux)
+(./wpaper.aux
+
+LaTeX Warning: Label `phase_transition' multiply defined.
+
+)
 \openout1 = `wpaper.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 64.
@@ -176,8 +180,7 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 64.
 LaTeX Font Info:    ... okay on input line 64.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 64.
 LaTeX Font Info:    ... okay on input line 64.
-
-(/usr/local/texlive/2012/texmf-dist/tex/context/base/supp-pdf.mkii
+ (/usr/local/texlive/2012/texmf-dist/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count101
 \scratchdimen=\dimen120
@@ -250,15 +253,24 @@ LaTeX Font Info:    Try loading font information for U+msb on input line 73.
 (/usr/local/texlive/2012/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2009/06/22 v3.00 AMS symbols B
 )
-(../Sections/abstract.tex) (../Sections/related_work.tex
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 4.
+(../Sections/abstract.tex
+Underfull \hbox (badness 10000) in paragraph at lines 1--2
 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3--4
+
+ []
+
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 8.
 (/usr/local/texlive/2012/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 4.
-
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 8.
+)
+(../Sections/related_work.tex
 
 LaTeX Warning: Citation `stevens2009canneuro' on page 1 undefined on input line
  5.
@@ -271,75 +283,60 @@ e 6.
 LaTeX Warning: Citation `stevens2010identification' on page 1 undefined on inpu
 t line 6.
 
-) (../Sections/intro.tex
-
-LaTeX Warning: Citation `ostrom' on page 1 undefined on input line 7.
-
 [1{/usr/local/texlive/2012/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
 
 ])
-(../Sections/model.tex
+(../Sections/intro.tex [2]) (../Sections/model.tex
 
-LaTeX Warning: Citation `helbing2009' on page 2 undefined on input line 10.
+LaTeX Warning: Citation `helbing2009' on page 3 undefined on input line 10.
 
-[2]
+[3]
 
-LaTeX Warning: Citation `helbing2009' on page 3 undefined on input line 16.
-
-
-LaTeX Warning: Citation `helbing2009' on page 3 undefined on input line 20.
-
-[3]) (../Sections/results.tex
-
-LaTeX Warning: Reference `configurations' on page 4 undefined on input line 2.
+LaTeX Warning: Citation `helbing2009' on page 4 undefined on input line 16.
 
 
-LaTeX Warning: Reference `configurations' on page 4 undefined on input line 2.
+LaTeX Warning: Citation `helbing2009' on page 4 undefined on input line 20.
 
+) (../Sections/results.tex [4]
 
-LaTeX Warning: Reference `phase_transition' on page 4 undefined on input line 1
-4.
-
-
-LaTeX Warning: Citation `helbing2009' on page 4 undefined on input line 18.
-
-
-LaTeX Warning: Reference `phase_transition' on page 4 undefined on input line 1
-8.
-
-
-LaTeX Warning: Reference `perc_filled' on page 4 undefined on input line 27.
-
-
-LaTeX Warning: Reference `perc_filled' on page 4 undefined on input line 27.
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
+LaTeX Warning: Citation `helbing2009' on page 5 undefined on input line 18.
 
 )
 No file wpaper.bbl.
-[4] [5] [6] (./wpaper.aux)
+(../Sections/figures.tex
+
+LaTeX Warning: Reference `perc_filled' on page 5 undefined on input line 4.
+
+
+LaTeX Warning: Reference `perc_filled' on page 5 undefined on input line 4.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+) [5] [6] [7] (../Sections/SI.tex) [8
+
+] (./wpaper.aux)
 
 LaTeX Warning: There were undefined references.
 
 
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 3526 strings out of 493488
- 51831 string characters out of 3141327
- 111453 words of memory out of 3000000
- 6781 multiletter control sequences out of 15000+200000
+ 3531 strings out of 493488
+ 51914 string characters out of 3141327
+ 112508 words of memory out of 3000000
+ 6780 multiletter control sequences out of 15000+200000
  7556 words of font info for 29 fonts, out of 3000000 for 9000
  957 hyphenation exceptions out of 8191
- 38i,6n,38p,1506b,345s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 38i,5n,38p,1506b,349s stack positions out of 5000i,500n,10000p,200000b,50000s
 </usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
 ></usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb>
 </usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb><
@@ -349,10 +346,10 @@ sr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr
 cal/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/loc
 al/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local
 /texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on wpaper.pdf (6 pages, 125127 bytes).
+Output written on wpaper.pdf (8 pages, 134903 bytes).
 PDF statistics:
- 59 PDF objects out of 1000 (max. 8388607)
- 41 compressed objects within 1 object stream
+ 67 PDF objects out of 1000 (max. 8388607)
+ 47 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
