@@ -468,7 +468,7 @@ class property_game():
     
 
     
-    def simulate(self,initDic,uploadToS3=True,verbose=0,loadStrategies=False):
+    def simulate(self,initDic,uploadToS3=True,verbose=0,loadStrategies=False,maxHours = 6):
         
         self.initVariables(initDic)
         
@@ -549,7 +549,11 @@ class property_game():
                 if verbose >1:
                     print "%s (%.2f perc.),cooperation level : %.2f percent"%(i,float(i)/MCS*100,C['c'][-1]*100)
                 
-    
+                now_T = time.mktime(datetime.now().timetuple())
+                
+                if (now_T - init_T)/3600. > maxHours:
+                    print "maximum simulation time reached %s. Finishing."%maxHours
+                    break
             
         if verbose > 0:
             print "final step",i
@@ -582,7 +586,7 @@ class property_game():
         
         if uploadToS3:
             J = json.dumps(dic)
-            key = bucket.new_key("results/json/simul%s_grid%s_filled%.2f_%s_r%.2f_q%.2f_m%.2f_s%.2f_M%s.json"%(iterations,grid_size,perc_filled_sites,datetime.strftime(datetime.fromtimestamp(dic['init_timestamp']),'%Y%m%d%H%M%S'),r,q,m,s,M))
+            key = bucket.new_key("results/json/simul%s_grid%s_filled%.2f_%s_r%.2f_q%.2f_m%.2f_s%.4f_M%s.json"%(iterations,grid_size,perc_filled_sites,datetime.strftime(datetime.fromtimestamp(dic['init_timestamp']),'%Y%m%d%H%M%S'),r,q,m,s,M))
             key.set_contents_from_string(J)
             print "results uploaded to S3"
             #return dic
@@ -633,8 +637,8 @@ if __name__ == '__main__':
     initDic = { 'grid_size' : grid_size,'iterations' : iterations, 'perc_filled_sites' : perc_filled_sites,
             'r':r,'q':q,'m':m,'s':s,'M':M}'''
 
-    initDic = { 'grid_size' : 49,'iterations' : 100, 'perc_filled_sites' : 0.5,
-            'r':0.0,'q':0.0,'m':1,'s':0.15,'M':5}
+    initDic = { 'grid_size' : 29,'iterations' : 20, 'perc_filled_sites' : 0.5,
+            'r':0.0,'q':0.0,'m':1,'s':0.1555,'M':5}
     
     
     PG = property_game()
