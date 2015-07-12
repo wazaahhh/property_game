@@ -165,7 +165,7 @@ def generateJobs2(n=1,res="low",simulate=False):
                'q' : 0.0,
                'm' : 1 ,
                's' : 0.0 ,
-               'M': 18
+               'M': 24
                }
     if res=="high":
         random_res = 100.
@@ -177,7 +177,7 @@ def generateJobs2(n=1,res="low",simulate=False):
     else:
         random_res = 10.
         #S = np.linspace(0.15,0.16,11)
-        S = np.linspace(0.2,0.9,6)
+        S = np.linspace(0.34,0.9,5)
         #S = S + np.random.random(len(S))/10.
         #PFS = np.linspace(0.4,0.6,11)
         

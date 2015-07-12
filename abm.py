@@ -20,6 +20,12 @@ def S3connectBucket(bucketName):
     bucket = s3.get_bucket(bucketName)
     return bucket
 
+
+def changeTypeKeysDic(dic,type=int):
+    for k in dic.keys():
+        dic[int(k)] = dic.pop(k)
+    return dic
+
 global bucket 
 bucket = S3connectBucket("property_game")
 
@@ -468,7 +474,7 @@ class property_game():
     
 
     
-    def simulate(self,initDic,uploadToS3=True,verbose=0,loadStrategies=False,maxHours = 6):
+    def simulate(self,initDic,uploadToS3=True,verbose=0,resumeKey=None,loadStrategies=False,maxHours = 6):
         
         self.initVariables(initDic)
         
@@ -477,7 +483,47 @@ class property_game():
         
         MCS = iterations*grid_size**2
         
-        if loadStrategies:
+        if resumeKey:
+            
+            print "resuming simulation: ", resumeKey
+            
+            maxHours = 24*5 # make sure the simulation goes to the end            
+            
+            
+            k = bucket.get_key(resumeKey)
+            retrieveDic = json.loads(k.get_contents_as_string())        
+            initDic = retrieveDic['input']
+            
+            self.initVariables(initDic)
+            init_T = retrieveDic['init_timestamp']
+            #last_iter = len(retrieveDic['output']['strategies_iter'].keys())
+            i = retrieveDic['output']['iterations']
+            #grid_size = retrieveDic['input']['grid_size']
+            
+            MCS = iterations*grid_size**2
+            print grid_size,iterations,i, MCS
+            
+            strategies_init = changeTypeKeysDic(retrieveDic['output']['strategies_final'],type=int)
+            strategies_iter = changeTypeKeysDic(retrieveDic['output']['strategies_iter'],type=int)
+            
+            strategies = strategies_init.copy()
+            
+            coop = np.array(strategies_init.values())
+            empty = len(coop[coop==-1])
+            cLevel = self.coopLevel(strategies_init)
+            
+            #print strategies_init.keys()
+            #print np.min(strategies_init.keys()),np.max(strategies_init.keys())
+            
+            randInt = np.random.randint(np.min(strategies_init.keys()),np.max(strategies_init.keys()),MCS)
+            
+            C = retrieveDic['output']['cooperation']
+            UpdateList = retrieveDic['output']['mv']
+            
+            dic = retrieveDic
+            
+            
+        elif loadStrategies:
             try:
                 initConditions = self.loadInitConditions(initDic)
                 strategies_init = self.strKeysToInt(initConditions['strategies'])
@@ -492,22 +538,27 @@ class property_game():
             strategies_init = self.initialize_grid(grid_size,perc_filled_sites)
             randInt = np.random.randint(np.min(strategies_init.keys()),np.max(strategies_init.keys()),MCS)
         
-        strategies = strategies_init.copy()
+        if not resumeKey:
+            '''Nasty condition to integrate the resume simulation with old code'''
+            strategies = strategies_init.copy()
         
-        coop = np.array(strategies.values())
-        empty = len(coop[coop==-1])
-    
-        cLevel = self.coopLevel(strategies)
+            coop = np.array(strategies.values())
+            empty = len(coop[coop==-1])
+            cLevel = self.coopLevel(strategies)
         
-        C={'iteration':[0],'c':[cLevel['c']],'d':[cLevel['d']],'e' : [cLevel['e']]}
+            C = {'iteration':[0],'c':[cLevel['c']],'d':[cLevel['d']],'e' : [cLevel['e']]}
         
-        dic = {'init_timestamp' : init_T, 'input': initDic}
-        dic['input']['strategy_init'] = strategies_init
+            dic = {'init_timestamp' : init_T, 'input': initDic}
+            dic['input']['strategy_init'] = strategies_init
+        
+            i=0
         
         strategies_iter = {}
         
-        for i,site in enumerate(randInt):
-      
+        
+        
+        for site in randInt[i:]:
+            i+=1
             strategies,moves = self.oneStep(strategies,site)
             
             
@@ -592,6 +643,17 @@ class property_game():
             #return dic
         else:
             return dic    
+
+#    def continueSimulate(self,key):
+#        '''Resume a simulation'''
+#        k = bucket.get_key(key)
+#        retrieveDic = json.loads(k.get_contents_as_string())        
+#        initDic = retrieveDic['input']
+#        last_iter = len(retrieveDic['output']['strategies_iter'].keys())
+#        initConditions = retrieveDic['output']['strategies_final']
+        
+        
+        return dic
       
     def initVariables(self,initDic):
         
@@ -637,7 +699,7 @@ if __name__ == '__main__':
     initDic = { 'grid_size' : grid_size,'iterations' : iterations, 'perc_filled_sites' : perc_filled_sites,
             'r':r,'q':q,'m':m,'s':s,'M':M}'''
 
-    initDic = { 'grid_size' : 29,'iterations' : 20, 'perc_filled_sites' : 0.5,
+    initDic = { 'grid_size' : 29,'iterations' : 200, 'perc_filled_sites' : 0.5,
             'r':0.0,'q':0.0,'m':1,'s':0.1555,'M':5}
     
     
