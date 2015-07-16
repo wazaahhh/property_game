@@ -68,7 +68,7 @@ while True:
         #    continue
         #else:
         try:
-            PG.simulate(msg,verbose=2,maxHours=6)
+            PG.simulate(msg,verbose=2,maxHours=11)
             print 'done'
             q.delete_message(message)
         except:

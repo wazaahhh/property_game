@@ -197,6 +197,175 @@ def trajectories(resultDic):
     pl.ylabel("cooperation level")
     pl.show()
 
+def prepareXYZ(parDic):
+    resultDic = loadResults(parDic)
+    dic = resultArray(resultDic,['perc_filled_sites','s','cooperators'])
+    #print len(dic['s'])
+    x = np.array(dic['perc_filled_sites'])
+    y = np.array(dic['s'])
+    z = np.array(dic['cooperators'])
+
+    xi = np.linspace(min(x), max(x),100)
+    yi = np.linspace(min(y), max(y),100)
+
+    #xi = np.linspace(0.1, 0.65)
+    #yi = np.linspace(0.1, 0.5)
+
+    X, Y = np.meshgrid(xi, yi)
+    Z = griddata(np.array(zip(*[x, y])), z, (X, Y),method="linear")
+    Z[Z<0.001]=0
+    Z[Z>1]=1
+    Z[np.isnan(Z)]=0
+    
+    return {'X':X,'Y':Y,'Z':Z}
+
+def export2plotly(parDic):
+    
+    dicXYZ = prepareXYZ(parDic)
+    
+    data = Data([
+        Surface(
+            z = dicXYZ['Z'],
+            x = dicXYZ['X'],
+            y = dicXYZ['Y'],
+            name='trace0',
+            colorscale=[[0, 'rgb(0,0,131)'], [0.125, 'rgb(0,60,170)'], [0.375, 'rgb(5,255,255)'], [0.625, 'rgb(255,255,0)'], [0.875, 'rgb(250,0,0)'], [1, 'rgb(128,0,0)']]
+        )
+    ])
+    layout = Layout(
+        title='ppGame_M%.2f_r%.2f_q%.2f_m%.2f'%(parDic['M'],parDic['r'],parDic['q'],parDic['m']),
+        autosize = False,
+        width = 1500,
+        height = 900,
+        margin=Margin(
+            l=50,
+            r=50,
+            b=100,
+            t=100,
+            pad=4
+        ),
+        scene=Scene(
+            xaxis=XAxis(
+                range=[0, 1],
+                domain=[1,0],
+                title = '',
+                #titlefont = Font(size = 18),
+                tickfont = Font(size = 14),
+                nticks=10,
+                gridcolor='rgb(255, 255, 255)',
+                gridwidth=2,
+                zerolinecolor='rgb(255, 255, 255)',
+                zerolinewidth=2
+            ),
+            yaxis=YAxis(
+                title = '',
+                #titlefont = Font(size = 18),
+                tickfont = Font(size = 14),
+                nticks=10,
+                gridcolor='rgb(255, 255, 255)',
+                gridwidth=2,
+                zerolinecolor='rgb(255, 255, 255)',
+                zerolinewidth=2
+            ),
+            zaxis=ZAxis(
+                range=[0, 1],
+                domain=[0, 1],
+                autorange=False,
+                title = '',
+                #titlefont = Font(size = 18),
+                tickfont = Font(size = 14),
+                nticks=10,
+                gridcolor='rgb(255, 255, 255)',
+                gridwidth=2,
+                zerolinecolor='rgb(255, 255, 255)',
+                zerolinewidth=2
+            ),
+            bgcolor='rgb(244, 244, 248)'
+        )
+    )
+    fig = Figure(data=data, layout=layout)
+    plot_url = py.plot(fig)
+    return plot_url
+
+
+def phase_transition(parDic,dRange=[0.4,0.6]):
+    resultDic = loadResults(parDic)
+    dic = resultArray(resultDic,['perc_filled_sites','s','cooperators'])
+    #print dic.keys()
+    d = np.array(dic['perc_filled_sites'])
+    c = np.array(dic['cooperators'])
+    s = np.array(dic['s'])
+
+    cond = (d >= dRange[0]) * ( d < dRange[1])
+    
+    s = s[cond]
+    c = c[cond]
+    d = d[cond]
+    o = np.argsort(s)
+    
+    return {'s' : s[o],'c' : c[o],'d':d[o]}
+    
+  
+
+def plotTimeSeries(simulDic,density=[0.46,0.54],violations=[0.155,0.16]):
+
+    K = searchKeys(simulDic)
+    l = len(K)
+    K2 = []
+    D = []
+    V= []
+
+    for k in K:
+        d = float(re.findall("_filled(.*?)_",k.name)[0])
+        v = float(re.findall("_s(.*?)_",k.name)[0])
+
+        if (d < density[0]) or (d > density[1]):
+            continue
+        elif (v < violations[0]) or (v > violations[1]):
+            continue
+        else:
+            K2 = np.append(K2,k)
+            D = np.append(D,d)
+            V = np.append(V,v)
+
+    o = np.lexsort([D,V])
+    K2 = K2[o]
+    V = V[o]
+    D = D[o]
+
+    print len(K2)
+
+    pl.figure(1,(15,12))
+    matplotlib.rcParams.update({'font.size': 22,'legend.fontsize': 14})
+
+    for i,k in enumerate(K2):
+        print i,k.name
+        simulResults = simplejson.loads(k.get_contents_as_string())
+        c = simulResults['output']['cooperation']['c']
+        pl.plot(c,ls="-",lw=2 - float(i)/len(K2)*1.8,label="%s: s=%.4f, d=%.2f"%(i,V[i],D[i]))
+
+
+    title = "M = %s, %.4f < d < %.4f, %.4f < s < %.4f"%(simulDic['M'],density[0],density[1],violations[0],violations[1])
+    pl.plot(np.arange(200),np.zeros([200])+0.5,'k-')
+    pl.legend(loc=0)
+    pl.xlabel("Iterations")
+    pl.ylabel("Cooperation Level")
+    pl.xlim(xmax=300)
+    pl.title(title)
+    #pl.figure(2)
+    #pl.plot(np.diff(c))
+    pl.savefig(rootDir + "figures/tseries_%s.eps"%title)
+    
+    
+
+# def routineLoop():
+#     '''Just a loop to make a few simulations'''
+#     initDic = { 'grid_size' : 49,'iterations' : 200, 'perc_filled_sites' : .9,'r':0.0,'q':0,'m':1,'s':0.0,'M':5}
+#     for i in range(7):
+#         print i, "/7 (M=5)"
+#         dic = PG.simulate(initDic,uploadToS3=True,verbose=2,loadStrategies=True)
+
+
 
 #if __name__ == '__main__':
     

@@ -13,13 +13,10 @@ import boto
 global bucketName
 bucketName = "property_game"
 
-
-
 def S3connectBucket(bucketName):
     s3 = boto.connect_s3()
     bucket = s3.get_bucket(bucketName)
     return bucket
-
 
 def changeTypeKeysDic(dic,type=int):
     for k in dic.keys():
@@ -39,7 +36,7 @@ class property_game():
         coop = np.array(strategies.values())
         cooperators = float(len(coop[coop==1]))/len(coop[coop>=0])
         defectors = float(len(coop[coop==0]))/len(coop[coop>=0])
-        empty = float(len(coop[coop<0]))/len(coop[coop>=0])
+        empty = float(len(coop[coop < 0]))/len(coop)
         return {'c' : cooperators,'d' : defectors,'e':empty}
     
     
@@ -98,12 +95,14 @@ class property_game():
     
     
     def loadInitConditions(self,initDic):
-        key = bucket.get_key("initial_conditions/initGrid/initGrid_simul%s_grid%s_filled%s.json"%(initDic['iterations'],initDic['grid_size'],initDic['perc_filled_sites']))
-        strategies_init = json.loads(key.get_contents_as_string())
-        key = bucket.get_key("initial_conditions/initRandInt/initRandInt_simul%s_grid%s_filled%s.json"%(initDic['iterations'],initDic['grid_size'],initDic['perc_filled_sites']))
-        randInt = np.array(json.loads(key.get_contents_as_string()))
+        key = "initial_conditions/initGrid/initGrid_simul%s_grid%s_filled%s.json"%(initDic['iterations'],initDic['grid_size'],initDic['perc_filled_sites'])
+        print key
+        k = bucket.get_key(key)
+        strategies_init = json.loads(k.get_contents_as_string())
+        #key = bucket.get_key("initial_conditions/initRandInt/initRandInt_simul%s_grid%s_filled%s.json"%(initDic['iterations'],initDic['grid_size'],initDic['perc_filled_sites']))
+        #randInt = np.array(json.loads(key.get_contents_as_string()))
         
-        return {'strategies' : strategies_init,'randInt': randInt}
+        return {'strategies' : strategies_init}
         
         
     def make_grid(self,strategies):
@@ -474,7 +473,7 @@ class property_game():
     
 
     
-    def simulate(self,initDic,uploadToS3=True,verbose=0,resumeKey=None,loadStrategies=False,maxHours = 6):
+    def simulate(self,initDic,uploadToS3=True,verbose=0,resumeKey=None,loadStrategies=None,maxHours = 11):
         
         self.initVariables(initDic)
         
@@ -525,9 +524,12 @@ class property_game():
             
         elif loadStrategies:
             try:
-                initConditions = self.loadInitConditions(initDic)
-                strategies_init = self.strKeysToInt(initConditions['strategies'])
-                randInt = initConditions['randInt']
+                #initConditions = self.loadInitConditions(initDic)
+                #strategies_init = self.strKeysToInt(initConditions['strategies'])
+                strategies_init = simplejson.loads(bucket.get_key(loadStrategies).get_contents_as_string())
+                randInt = np.random.randint(np.min(strategies_init.keys()),np.max(strategies_init.keys()),MCS)
+                
+                #randInt = initConditions['randInt']
                 print "initial conditions successfully loaded"
             except:
                 print 'create initial conditions'
@@ -610,8 +612,8 @@ class property_game():
             print "final step",i
             print "initial configuration: M=%s, r=%s, q=%s, m=%s, s=%s"%(M,r,q,m,s)
             print "empty_sites : %s" %cLevel['e']
-            print "defectors : %s" %cLevel['c']
-            print "cooperators : %s"%cLevel['d']
+            print "defectors : %s" %cLevel['d']
+            print "cooperators : %s"%cLevel['c']
         
             self.crop_grid(0,strategies_init,10)
             print "\n"
@@ -699,7 +701,7 @@ if __name__ == '__main__':
     initDic = { 'grid_size' : grid_size,'iterations' : iterations, 'perc_filled_sites' : perc_filled_sites,
             'r':r,'q':q,'m':m,'s':s,'M':M}'''
 
-    initDic = { 'grid_size' : 29,'iterations' : 200, 'perc_filled_sites' : 0.5,
+    initDic = { 'grid_size' : 49,'iterations' : 200, 'perc_filled_sites' : 0.5,
             'r':0.0,'q':0.0,'m':1,'s':0.1555,'M':5}
     
     
