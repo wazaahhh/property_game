@@ -356,15 +356,21 @@ def plotTimeSeries(simulDic,density=[0.46,0.54],violations=[0.155,0.16]):
     #pl.plot(np.diff(c))
     pl.savefig(rootDir + "figures/tseries_%s.eps"%title)
     
+
+
+def pickRandomInitConfig(parDic):
+    print "blah"
+
     
-
-# def routineLoop():
-#     '''Just a loop to make a few simulations'''
-#     initDic = { 'grid_size' : 49,'iterations' : 200, 'perc_filled_sites' : .9,'r':0.0,'q':0,'m':1,'s':0.0,'M':5}
-#     for i in range(7):
-#         print i, "/7 (M=5)"
-#         dic = PG.simulate(initDic,uploadToS3=True,verbose=2,loadStrategies=True)
-
+'''
+def routineLoop():
+    #Just a loop to make a few simulations
+    initDic = { 'grid_size' : 49,'iterations' : 200, 'perc_filled_sites' : .9,'r':0.0,'q':0,'m':1,'s':0.0,'M':3}
+    initDicKey = "initial_conditions/initGrid/initGrid_simul200_grid49_filled0.9_M3.json"
+    for i in range(10):
+        print i+1, "/10 (M=3)"
+        dic = PG.simulate(initDic,uploadToS3=True,verbose=2,loadStrategies=initDicKey)
+'''
 
 
 #if __name__ == '__main__':

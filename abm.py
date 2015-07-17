@@ -526,9 +526,8 @@ class property_game():
             try:
                 #initConditions = self.loadInitConditions(initDic)
                 #strategies_init = self.strKeysToInt(initConditions['strategies'])
-                strategies_init = simplejson.loads(bucket.get_key(loadStrategies).get_contents_as_string())
+                strategies_init = changeTypeKeysDic(json.loads(bucket.get_key(loadStrategies).get_contents_as_string()),type=int)
                 randInt = np.random.randint(np.min(strategies_init.keys()),np.max(strategies_init.keys()),MCS)
-                
                 #randInt = initConditions['randInt']
                 print "initial conditions successfully loaded"
             except:
